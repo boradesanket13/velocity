@@ -1,0 +1,47 @@
+{
+  "name": "webhost-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API, build worker and local site server for the web hosting platform",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev:api": "tsx watch src/api/server.ts",
+    "dev:worker": "tsx watch src/worker/main.ts",
+    "dev:site": "tsx watch src/site/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start:api": "node dist/api/server.js",
+    "start:worker": "node dist/worker/main.js",
+    "start:site": "node dist/site/server.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.700.0",
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/client-ecs": "^3.700.0",
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/client-sqs": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "cors": "^2.8.5",
+    "dockerode": "^4.0.2",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "mime-types": "^2.1.35",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "tar": "^7.4.3",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/dockerode": "^3.3.31",
+    "@types/express": "^4.17.21",
+    "@types/mime-types": "^2.1.4",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}

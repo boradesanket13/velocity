@@ -1,0 +1,22 @@
+aws_region  = "us-east-1"
+name        = "webhost"
+environment = "prod"
+
+# Route 53 PUBLIC hosted zone that already exists in this account.
+zone_name = "example.com"
+# Dashboard -> app.example.com, API -> api.example.com (change the prefixes if you like)
+app_subdomain = "app"
+api_subdomain = "api"
+
+# Hosted sites are served from https://<id>.<sites_domain>.
+# Use a DIFFERENT registrable domain than the dashboard (like vercel.app vs vercel.com)
+# so user-provided JavaScript can never read the dashboard's cookies.
+sites_domain    = "example-sites.app"
+sites_zone_name = "example-sites.app" # the Route 53 zone that contains sites_domain
+
+# GitHub repository (owner/name) allowed to deploy through GitHub Actions (OIDC, no stored keys).
+github_repo = "your-org/your-repo"
+
+# Alerts and budget notifications (leave empty to skip).
+alert_email = "you@example.com"
+monthly_budget_usd = 150

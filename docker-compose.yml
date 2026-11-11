@@ -1,0 +1,116 @@
+
+name: webhost
+
+x-aws-local: &aws-local
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: minioadmin
+  AWS_SECRET_ACCESS_KEY: minioadmin
+  AWS_ENDPOINT_URL_S3: http://minio:9000
+  AWS_ENDPOINT_URL_SQS: http://elasticmq:9324
+  AWS_ENDPOINT_URL_DYNAMODB: http://dynamodb:8000
+  S3_FORCE_PATH_STYLE: "true"
+  SITES_BUCKET: webhost-sites
+  ARTIFACTS_BUCKET: webhost-artifacts
+  DEPLOYMENTS_TABLE: webhost-deployments
+  BUILD_QUEUE_NAME: webhost-builds
+  LOG_LEVEL: debug
+
+networks:
+  default:
+    name: webhost-net
+
+volumes:
+  minio-data:
+
+services:
+  minio:
+    image: docker.io/pgsty/silo:RELEASE.2026-10-26T00-00-00Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    command: -jar DynamoDBLocal.jar -sharedDb -inMemory
+    ports:
+      - "8000:8000"
+
+  elasticmq:
+    image: softwaremill/elasticmq-native:latest
+    volumes:
+      - ./infra/local/elasticmq.conf:/opt/elasticmq.conf:ro
+    ports:
+      - "9324:9324"
+
+  init:
+    image: amazon/aws-cli:latest
+    entrypoint: ["/bin/sh", "/init.sh"]
+    environment:
+      <<: *aws-local
+    volumes:
+      - ./infra/local/init.sh:/init.sh:ro
+    depends_on:
+      - minio
+      - dynamodb
+      - elasticmq
+    restart: "no"
+
+  runner:
+    build: ./runner
+    image: webhost-runner:local
+    command: ["true"]
+    restart: "no"
+
+  api:
+    build: ./backend
+    environment:
+      <<: *aws-local
+      NODE_ENV: development
+      PORT: "3000"
+      SITES_URL_TEMPLATE: "http://{id}.localhost:3001"
+      CORS_ORIGINS: "http://localhost:5173"
+      API_KEYS: "${API_KEYS:-dev=dev-token-change-me-0123456789}"
+    ports:
+      - "3000:3000"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  worker:
+    build: ./backend
+    command: ["node", "dist/worker/main.js"]
+    user: "0:0"
+    environment:
+      <<: *aws-local
+      NODE_ENV: development
+      RUNNER_MODE: docker
+      RUNNER_IMAGE: webhost-runner:local
+      DOCKER_NETWORK: webhost-net
+      BUILD_TIMEOUT_SECONDS: "600"
+      WORKER_CONCURRENCY: "2"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      runner:
+        condition: service_completed_successfully
+
+  site:
+    build: ./backend
+    command: ["node", "dist/site/server.js"]
+    environment:
+      <<: *aws-local
+      NODE_ENV: development
+      PORT: "3001"
+    ports:
+      - "3001:3001"
+    depends_on:
+      init:
+        condition: service_completed_successfully
