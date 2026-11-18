@@ -52,7 +52,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
       - uses: docker/setup-buildx-action@v3
       - name: Build and push backend (API + worker + site server)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: backend
           platforms: linux/amd64
@@ -63,7 +63,7 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
       - name: Build and push runner (sandbox image)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: runner
           platforms: linux/amd64
